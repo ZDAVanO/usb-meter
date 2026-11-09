@@ -272,6 +272,21 @@ class state {
             [0, 1, 2, 3, 4, 5, 6, 7, 8],
             this.max_data
         );
+
+        if (currentWindowSeconds > 0 && !isUserPanning && points.length > 0) {
+            const latest = points[points.length - 1];
+            const nowTime = latest.time.getTime();
+            const startTime = nowTime - (currentWindowSeconds * 1000);
+            isApplyingWindow = true;
+            Plotly.relayout(graphDiv, {
+                'xaxis.autorange': false,
+                'xaxis.range': [new Date(startTime).toISOString(), new Date(nowTime).toISOString()],
+            }).then(() => {
+                isApplyingWindow = false;
+            }).catch(() => {
+                isApplyingWindow = false;
+            });
+        }
     }
 
     static readonly CUMULATIVE_PROPERTIES = ["energy", "capacity"];
@@ -424,11 +439,83 @@ async function ResetMeter() {
     }
 }
 
+let currentWindowSeconds: number = 0; // 0 = All
+let isUserPanning: boolean = false;
+let isApplyingWindow: boolean = false;
+
+function setTimeWindow(seconds: number) {
+    currentWindowSeconds = seconds;
+    isUserPanning = false;
+
+    const buttons = document.querySelectorAll<HTMLButtonElement>('.time-range-btn');
+    buttons.forEach(btn => {
+        const range = Number(btn.getAttribute('data-range') || '0');
+        if (range === seconds) {
+            btn.classList.add('active');
+        } else {
+            btn.classList.remove('active');
+        }
+    });
+
+    applyCurrentTimeWindow();
+}
+
+function applyCurrentTimeWindow() {
+    if (!state.last) {
+        return;
+    }
+    isApplyingWindow = true;
+    if (currentWindowSeconds === 0) {
+        Plotly.relayout(graphDiv, {
+            'xaxis.autorange': true,
+        }).then(() => {
+            isApplyingWindow = false;
+        }).catch(() => {
+            isApplyingWindow = false;
+        });
+    } else {
+        const nowTime = state.last.time.getTime();
+        const startTime = nowTime - (currentWindowSeconds * 1000);
+        Plotly.relayout(graphDiv, {
+            'xaxis.autorange': false,
+            'xaxis.range': [new Date(startTime).toISOString(), new Date(nowTime).toISOString()],
+        }).then(() => {
+            isApplyingWindow = false;
+        }).catch(() => {
+            isApplyingWindow = false;
+        });
+    }
+}
+
+function attachRelayoutListener() {
+    const graphElem = document.getElementById(graphDiv) as any;
+    if (graphElem && graphElem.on) {
+        if (graphElem.removeAllListeners) {
+            graphElem.removeAllListeners('plotly_relayout');
+        }
+        graphElem.on('plotly_relayout', (eventData: any) => {
+            if (!eventData || isApplyingWindow) {
+                return;
+            }
+            if (eventData['xaxis.autorange'] === true) {
+                // User double-clicked to reset
+                setTimeWindow(0);
+            } else if (eventData['xaxis.range[0]'] !== undefined || eventData['xaxis.range'] !== undefined) {
+                // User panned or zoomed manually
+                isUserPanning = true;
+                const buttons = document.querySelectorAll<HTMLButtonElement>('.time-range-btn');
+                buttons.forEach(btn => btn.classList.remove('active'));
+            }
+        });
+    }
+}
+
 async function ClearData() {
     if (!confirm("Are you sure you want to clear the graph and all recorded session data?")) {
         return;
     }
     console.log("Clearing graph and recorded session data...");
+    setTimeWindow(0);
     state.reset();
     await storage.clear();
     initPlot();
@@ -579,7 +666,10 @@ function initPlot(initialPackets?: Packet[]) {
             line: { color: 'lightGreen' },
             visible: 'legendonly',
         },
-    ], layout, config);
+    ], layout, config).then(() => {
+        applyCurrentTimeWindow();
+        attachRelayoutListener();
+    });
 }
 
 function Save() {

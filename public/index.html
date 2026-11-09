@@ -25,6 +25,18 @@
       border-color: #d97706 !important;
       color: #ffffff !important;
     }
+    .time-range-btn {
+      padding: 3px 8px;
+      font-size: 0.8em;
+      margin: 0;
+      cursor: pointer;
+    }
+    .time-range-btn.active {
+      background-color: #0366d6 !important;
+      border-color: #0366d6 !important;
+      color: #ffffff !important;
+      font-weight: bold;
+    }
   </style>
 
   <title>USB BLE Power Meter</title>
@@ -102,6 +114,14 @@
 
   <hr>
 
+    <div style="display: flex; align-items: center; justify-content: flex-end; gap: 6px; margin-bottom: 8px;">
+    <span style="font-size: 0.85em; opacity: 0.8; margin-right: 4px;">Window:</span>
+    <button class="time-range-btn active" data-range="0" onclick="setTimeWindow(0)">All</button>
+    <button class="time-range-btn" data-range="60" onclick="setTimeWindow(60)">1m</button>
+    <button class="time-range-btn" data-range="300" onclick="setTimeWindow(300)">5m</button>
+    <button class="time-range-btn" data-range="900" onclick="setTimeWindow(900)">15m</button>
+    <button class="time-range-btn" data-range="3600" onclick="setTimeWindow(3600)">1h</button>
+  </div>
   <div id="graph"></div>
 
   <dialog id="dialog">
