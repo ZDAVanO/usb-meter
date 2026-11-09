@@ -321,6 +321,48 @@ class Packet {
         return `[${this.time.toLocaleString()}] ${this.voltage.toFixed(2)}V ${this.current.toFixed(2)}A ${this.temp}°C ${this.capacity}mAh ${this.energy.toFixed(2)}Wh (${this.duration})`;
     }
 
+    toRecord(): StoredRecord {
+        return {
+            time: this.time instanceof Date ? this.time.getTime() : new Date(this.time).getTime(),
+            voltage: this.voltage,
+            current: this.current,
+            power: this.power,
+            energy: this.energy,
+            capacity: this.capacity,
+            resistance: this.resistance,
+            temp: this.temp,
+            data1: this.data1,
+            data2: this.data2,
+            duration: this.duration,
+            type: this.type,
+        };
+    }
+
+    static fromRecord(rec: StoredRecord): Packet {
+        const p = Object.create(Packet.prototype) as Packet;
+        p.msg = MESSAGE.REPORT;
+        p.msg_name = MESSAGE[p.msg];
+        p.type = rec.type;
+        p.type_name = DEVICE_TYPE[p.type];
+        p.voltage = rec.voltage;
+        p.current = rec.current;
+        p.power = rec.power;
+        p.energy = rec.energy;
+        p.capacity = rec.capacity;
+        p.resistance = rec.resistance;
+        p.temp = rec.temp;
+        p.data1 = rec.data1;
+        p.data2 = rec.data2;
+        p.duration = rec.duration;
+        p.time = new Date(rec.time);
+        p.backlightTime = 0;
+        p.over_voltage_protection = 0;
+        p.lower_voltage_protection = 0;
+        p.over_current_protection = 0;
+        p.duration_raw = { hour: 0, minute: 0, second: 0 };
+        return p;
+    }
+
     static durationString(duration: PacketDuration): string {
         return `${Packet.pad(duration.hour, 3)}:${Packet.pad(duration.minute, 2)}:${Packet.pad(duration.second, 2)}`
     }
