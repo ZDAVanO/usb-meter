@@ -6,6 +6,27 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/water.css@2/out/water.min.css">
 
+  <style>
+    #go {
+      transition: background-color 0.2s, border-color 0.2s;
+    }
+    .btn-connected {
+      background-color: #dc3545 !important;
+      border-color: #dc3545 !important;
+      color: #ffffff !important;
+    }
+    .btn-disconnected {
+      background-color: #2ea44f !important;
+      border-color: #2ea44f !important;
+      color: #ffffff !important;
+    }
+    .btn-connecting {
+      background-color: #d97706 !important;
+      border-color: #d97706 !important;
+      color: #ffffff !important;
+    }
+  </style>
+
   <title>USB BLE Power Meter</title>
 </head>
 
@@ -19,7 +40,7 @@
 
   <hr>
 
-  <button id="go" onclick="Go()">Connect</button>
+  <button id="go" class="btn-disconnected" onclick="Go()">Connect</button>
   <button id="pause" onclick="Pause()">Pause</button>
   <button id="resetMeter" onclick="ResetMeter()">Reset Meter</button>
   <button id="clearData" onclick="ClearData()">Clear Graph</button>

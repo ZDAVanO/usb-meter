@@ -46,6 +46,20 @@ interface StateData {
 
 const BASE_TITLE = "USB BLE Power Meter";
 
+function updateConnectionUI(status: 'disconnected' | 'connecting' | 'connected') {
+    goButton.classList.remove('btn-connected', 'btn-disconnected', 'btn-connecting');
+    if (status === 'connected') {
+        goButton.innerText = "Disconnect";
+        goButton.classList.add('btn-connected');
+    } else if (status === 'connecting') {
+        goButton.innerText = "Connecting...";
+        goButton.classList.add('btn-connecting');
+    } else {
+        goButton.innerText = "Connect";
+        goButton.classList.add('btn-disconnected');
+    }
+}
+
 class WakeLockManager {
     private sentinel: any = null;
 
@@ -132,14 +146,14 @@ class state {
 
     static async stop(e: Event) {
         console.log("state stop");
-        goButton.innerText = "Connect";
+        updateConnectionUI('disconnected');
         this.disconnected = true;
         await wakeLock.release();
     }
 
     static async start(device: BluetoothDevice) {
         console.log("state start");
-        goButton.innerText = "Disconnect";
+        updateConnectionUI('connected');
         if (!this.data.started) {
             this.data.started = new Date();
         }
@@ -268,6 +282,8 @@ class state {
         );
     }
 
+    static readonly CUMULATIVE_PROPERTIES = ["energy", "capacity"];
+
     static updateStats(p: Packet) {
         for (const prop of this.NUMERIC_PROPERTIES) {
             const val = p[prop];
@@ -279,6 +295,10 @@ class state {
             }
             if (typeof this.data.stats.min[prop] === 'undefined' || val < this.data.stats.min[prop]) {
                 this.data.stats.min[prop] = val;
+            }
+            // Energy and capacity accumulate monotonically, so calculating an average has no physical meaning
+            if (this.CUMULATIVE_PROPERTIES.indexOf(prop) !== -1) {
+                continue;
             }
             if (typeof this.data.stats.sum[prop] === 'undefined') {
                 this.data.stats.sum[prop] = 0;
@@ -313,8 +333,8 @@ class state {
             voltageStatsElem.innerText = `${this.data.stats.min.voltage ?? '-'} / ${this.data.stats.max.voltage ?? '-'} / ${this.data.stats.average.voltage ?? '-'}`;
             currentStatsElem.innerText = `${this.data.stats.min.current ?? '-'} / ${this.data.stats.max.current ?? '-'} / ${this.data.stats.average.current ?? '-'}`;
             powerStatsElem.innerText = `${this.data.stats.min.power ?? '-'} / ${this.data.stats.max.power ?? '-'} / ${this.data.stats.average.power ?? '-'}`;
-            energyStatsElem.innerText = `${this.data.stats.min.energy ?? '-'} / ${this.data.stats.max.energy ?? '-'} / ${this.data.stats.average.energy ?? '-'}`;
-            capacityStatsElem.innerText = `${this.data.stats.min.capacity ?? '-'} / ${this.data.stats.max.capacity ?? '-'} / ${this.data.stats.average.capacity ?? '-'}`;
+            energyStatsElem.innerText = `${this.data.stats.min.energy ?? '-'} / ${this.data.stats.max.energy ?? '-'}`;
+            capacityStatsElem.innerText = `${this.data.stats.min.capacity ?? '-'} / ${this.data.stats.max.capacity ?? '-'}`;
             resistanceStatsElem.innerText = `${this.data.stats.min.resistance ?? '-'} / ${this.data.stats.max.resistance ?? '-'} / ${this.data.stats.average.resistance ?? '-'}`;
             temperatureStatsElem.innerText = `${this.data.stats.min.temp ?? '-'} / ${this.data.stats.max.temp ?? '-'} / ${this.data.stats.average.temp ?? '-'}`;
             usbStatsElem.innerText = `(${this.data.stats.min.data1 ?? '-'}/${this.data.stats.min.data2 ?? '-'}) / (${this.data.stats.max.data1 ?? '-'}/${this.data.stats.max.data2 ?? '-'}) / (${this.data.stats.average.data1 ?? '-'}/${this.data.stats.average.data2 ?? '-'})`;
@@ -370,20 +390,21 @@ async function Go() {
         console.log("stopping");
         await state.meter.disconnect();
         await wakeLock.release();
+        updateConnectionUI('disconnected');
     } else {
         try {
+            updateConnectionUI('connecting');
             const device = await navigator.bluetooth.requestDevice({
                 filters: [{
                     services: [UUID_SERVICE]
                 }]
             });
-            goButton.innerText = "Starting....";
             console.log("got device: ", device.name, device.id);
             await state.meter.start(device);
             await wakeLock.request();
         } catch (error) {
             console.error("Bluetooth connection error: ", error);
-            goButton.innerText = "Connect";
+            updateConnectionUI('disconnected');
             showError(String(error));
         }
     }
@@ -613,6 +634,8 @@ function Save() {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
+    updateConnectionUI('disconnected');
+
     if ("bluetooth" in navigator) {
         warnBlockElem.hidden = true;
     } else {
