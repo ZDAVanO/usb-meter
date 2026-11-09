@@ -89,6 +89,21 @@ class WakeLockManager {
 const wakeLock = new WakeLockManager();
 const storage = new MeterStorage();
 
+interface PlotPoint {
+    time: Date;
+    voltage: number | null;
+    current: number | null;
+    power: number | null;
+    energy: number | null;
+    capacity: number | null;
+    resistance: number | null;
+    temp: number | null;
+    data1: number | null;
+    data2: number | null;
+}
+
+const GAP_THRESHOLD_MS = 5000; // 5 seconds threshold to detect disconnect / pause
+
 class state {
     private constructor() { }
 
@@ -100,7 +115,8 @@ class state {
     static max_data = 100000;
 
     // Buffer points while document is hidden to optimize CPU
-    static pendingPoints: Packet[] = [];
+    static pendingPoints: PlotPoint[] = [];
+    static disconnected = false;
 
     static readonly NUMERIC_PROPERTIES = [
         "voltage",
@@ -117,6 +133,7 @@ class state {
     static async stop(e: Event) {
         console.log("state stop");
         goButton.innerText = "Connect";
+        this.disconnected = true;
         await wakeLock.release();
     }
 
@@ -133,6 +150,7 @@ class state {
         this.last = null;
         this.data.history = [];
         this.pendingPoints = [];
+        this.disconnected = false;
         this.data.started = null;
         this.data.stats = {
             min: {},
@@ -153,6 +171,31 @@ class state {
             return;
         }
 
+        // Check for gap (disconnect or > 5s interruption) to create a visual break on plot
+        if (this.last) {
+            const timeDiff = p.time.getTime() - this.last.time.getTime();
+            if (timeDiff > GAP_THRESHOLD_MS || this.disconnected) {
+                const gapPoint: PlotPoint = {
+                    time: new Date(this.last.time.getTime() + 1000),
+                    voltage: null,
+                    current: null,
+                    power: null,
+                    energy: null,
+                    capacity: null,
+                    resistance: null,
+                    temp: null,
+                    data1: null,
+                    data2: null,
+                };
+                if (document.hidden) {
+                    this.pendingPoints.push(gapPoint);
+                } else {
+                    this.flushPlotPoints([gapPoint]);
+                }
+            }
+        }
+        this.disconnected = false;
+
         // Chronological append
         this.data.history.push(p);
         if (this.data.history.length > this.max_data) {
@@ -165,16 +208,29 @@ class state {
         // Persist point to IndexedDB
         storage.addRecord(p.toRecord()).catch(err => console.error("Storage write error:", err));
 
+        const livePoint: PlotPoint = {
+            time: p.time,
+            voltage: p.voltage,
+            current: p.current,
+            power: p.power,
+            energy: p.energy,
+            capacity: p.capacity,
+            resistance: p.resistance,
+            temp: p.temp,
+            data1: p.data1,
+            data2: p.data2,
+        };
+
         // When tab is hidden, buffer points to prevent expensive background canvas draws
         if (document.hidden) {
-            this.pendingPoints.push(p);
+            this.pendingPoints.push(livePoint);
         } else {
             if (this.pendingPoints.length > 0) {
-                const batch = this.pendingPoints.concat(p);
+                const batch = this.pendingPoints.concat(livePoint);
                 this.pendingPoints = [];
-                this.flushPointsToPlot(batch);
+                this.flushPlotPoints(batch);
             } else {
-                this.flushPointsToPlot([p]);
+                this.flushPlotPoints([livePoint]);
             }
         }
     }
@@ -183,10 +239,10 @@ class state {
         if (this.pendingPoints.length === 0) return;
         const batch = this.pendingPoints;
         this.pendingPoints = [];
-        this.flushPointsToPlot(batch);
+        this.flushPlotPoints(batch);
     }
 
-    static flushPointsToPlot(points: Packet[]) {
+    static flushPlotPoints(points: PlotPoint[]) {
         if (points.length === 0) return;
         const xValues = points.map(pt => pt.time);
         const yValues = [
@@ -373,6 +429,38 @@ function Reset() {
     ClearData();
 }
 
+function buildPlotSeries(packets?: Packet[]): { x: Date[]; y: (number | null)[][] } {
+    const x: Date[] = [];
+    const y: (number | null)[][] = [[], [], [], [], [], [], [], [], []];
+    if (!packets || packets.length === 0) {
+        return { x, y };
+    }
+    for (let i = 0; i < packets.length; i++) {
+        const p = packets[i];
+        if (i > 0) {
+            const prev = packets[i - 1];
+            if (p.time.getTime() - prev.time.getTime() > GAP_THRESHOLD_MS) {
+                // Insert gap point to break lines visually
+                x.push(new Date(prev.time.getTime() + 1000));
+                for (let k = 0; k < 9; k++) {
+                    y[k].push(null);
+                }
+            }
+        }
+        x.push(p.time);
+        y[0].push(p.voltage);
+        y[1].push(p.current);
+        y[2].push(p.power);
+        y[3].push(p.energy);
+        y[4].push(p.capacity);
+        y[5].push(p.resistance);
+        y[6].push(p.temp);
+        y[7].push(p.data1);
+        y[8].push(p.data2);
+    }
+    return { x, y };
+}
+
 function initPlot(initialPackets?: Packet[]) {
     const layout = {
         autosize: true,
@@ -385,84 +473,92 @@ function initPlot(initialPackets?: Packet[]) {
         responsive: true,
     };
 
-    const xData = initialPackets && initialPackets.length > 0 ? initialPackets.map(p => p.time) : [];
-    const getY = (fn: (p: Packet) => number | null) => (initialPackets && initialPackets.length > 0 ? initialPackets.map(fn) : []);
+    const series = buildPlotSeries(initialPackets);
 
     Plotly.newPlot(graphDiv, [
         {
             name: "Volts",
-            y: getY(p => p.voltage),
-            x: xData,
+            y: series.y[0],
+            x: series.x,
             type: 'scattergl',
             mode: 'lines',
+            connectgaps: false,
             line: { color: 'darkRed' },
         },
         {
             name: "Current",
-            y: getY(p => p.current),
-            x: xData,
+            y: series.y[1],
+            x: series.x,
             type: 'scattergl',
             mode: 'lines',
+            connectgaps: false,
             line: { color: 'green' },
         },
         {
             name: "Power",
-            y: getY(p => p.power),
-            x: xData,
+            y: series.y[2],
+            x: series.x,
             type: 'scattergl',
             mode: 'lines',
+            connectgaps: false,
             line: { color: 'red' },
         },
         {
             name: "Energy",
-            y: getY(p => p.energy),
-            x: xData,
+            y: series.y[3],
+            x: series.x,
             type: 'scattergl',
             mode: 'lines',
+            connectgaps: false,
             line: { color: 'purple' },
             visible: 'legendonly',
         },
         {
             name: "Capacity",
-            y: getY(p => p.capacity),
-            x: xData,
+            y: series.y[4],
+            x: series.x,
             type: 'scattergl',
             mode: 'lines',
+            connectgaps: false,
             line: { color: 'lightblue' },
             visible: 'legendonly',
         },
         {
             name: "Resistance",
-            y: getY(p => p.resistance),
-            x: xData,
+            y: series.y[5],
+            x: series.x,
             type: 'scattergl',
             mode: 'lines',
+            connectgaps: false,
             line: { color: 'blue' },
             visible: 'legendonly',
         },
         {
             name: "Temperature",
-            y: getY(p => p.temp),
-            x: xData,
+            y: series.y[6],
+            x: series.x,
             type: 'scattergl',
             mode: 'lines',
+            connectgaps: false,
             line: { color: 'turquoise' },
         },
         {
             name: "USB D-",
-            y: getY(p => p.data1),
-            x: xData,
+            y: series.y[7],
+            x: series.x,
             type: 'scattergl',
             mode: 'lines',
+            connectgaps: false,
             line: { color: 'lightGreen' },
             visible: 'legendonly',
         },
         {
             name: "USB D+",
-            y: getY(p => p.data2),
-            x: xData,
+            y: series.y[8],
+            x: series.x,
             type: 'scattergl',
             mode: 'lines',
+            connectgaps: false,
             line: { color: 'lightGreen' },
             visible: 'legendonly',
         },
