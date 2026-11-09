@@ -275,12 +275,16 @@ class state {
 
         if (currentWindowSeconds > 0 && !isUserPanning && points.length > 0) {
             const latest = points[points.length - 1];
-            const nowTime = latest.time.getTime();
+            const nowTime = latest.time instanceof Date
+                ? latest.time.getTime()
+                : new Date(latest.time).getTime();
             const startTime = nowTime - (currentWindowSeconds * 1000);
+            const startDate = new Date(startTime);
+            const endDate = new Date(nowTime);
             isApplyingWindow = true;
             Plotly.relayout(graphDiv, {
                 'xaxis.autorange': false,
-                'xaxis.range': [new Date(startTime).toISOString(), new Date(nowTime).toISOString()],
+                'xaxis.range': [formatDateForPlotly(startDate), formatDateForPlotly(endDate)],
             }).then(() => {
                 isApplyingWindow = false;
             }).catch(() => {
@@ -439,6 +443,11 @@ async function ResetMeter() {
     }
 }
 
+function formatDateForPlotly(d: Date): string {
+    const pad = (n: number, z = 2) => String(n).padStart(z, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}.${pad(d.getMilliseconds(), 3)}`;
+}
+
 let currentWindowSeconds: number = 0; // 0 = All
 let isUserPanning: boolean = false;
 let isApplyingWindow: boolean = false;
@@ -474,11 +483,18 @@ function applyCurrentTimeWindow() {
             isApplyingWindow = false;
         });
     } else {
-        const nowTime = state.last.time.getTime();
+        const lastPacket = (state.data.history && state.data.history.length > 0)
+            ? state.data.history[state.data.history.length - 1]
+            : state.last;
+        const nowTime = lastPacket.time instanceof Date
+            ? lastPacket.time.getTime()
+            : new Date(lastPacket.time).getTime();
         const startTime = nowTime - (currentWindowSeconds * 1000);
+        const startDate = new Date(startTime);
+        const endDate = new Date(nowTime);
         Plotly.relayout(graphDiv, {
             'xaxis.autorange': false,
-            'xaxis.range': [new Date(startTime).toISOString(), new Date(nowTime).toISOString()],
+            'xaxis.range': [formatDateForPlotly(startDate), formatDateForPlotly(endDate)],
         }).then(() => {
             isApplyingWindow = false;
         }).catch(() => {
