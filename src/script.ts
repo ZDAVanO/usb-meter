@@ -1,7 +1,6 @@
 // DOM elements
 const goButton = document.getElementById("go")!;
 const pauseElem = document.getElementById("pause")!;
-const wakeLockStatusElem = document.getElementById("wakeLockStatus");
 
 // dialog
 const dialogElem = document.getElementById('dialog')! as HTMLDialogElement;
@@ -45,14 +44,10 @@ interface StateData {
     };
 }
 
+const BASE_TITLE = "USB BLE Power Meter";
+
 class WakeLockManager {
     private sentinel: any = null;
-    private statusElem: HTMLElement | null = null;
-
-    init(statusElem: HTMLElement | null) {
-        this.statusElem = statusElem;
-        this.updateUI(false);
-    }
 
     isActive(): boolean {
         return this.sentinel !== null && !this.sentinel.released;
@@ -60,19 +55,21 @@ class WakeLockManager {
 
     async request(): Promise<void> {
         if (!('wakeLock' in navigator)) {
-            this.updateUI(false, "WakeLock unsupported");
+            document.title = `🟢 ${BASE_TITLE}`;
             return;
         }
         try {
             this.sentinel = await (navigator as any).wakeLock.request('screen');
             this.sentinel.addEventListener('release', () => {
                 this.sentinel = null;
-                this.updateUI(false);
+                if (!state.meter.running) {
+                    document.title = BASE_TITLE;
+                }
             });
-            this.updateUI(true);
+            document.title = `🟢 ${BASE_TITLE}`;
         } catch (err) {
             console.warn('Wake Lock request failed:', err);
-            this.updateUI(false);
+            document.title = `🟢 ${BASE_TITLE}`;
         }
     }
 
@@ -84,17 +81,8 @@ class WakeLockManager {
                 console.warn('Wake Lock release error:', err);
             }
             this.sentinel = null;
-            this.updateUI(false);
         }
-    }
-
-    private updateUI(active: boolean, message?: string) {
-        if (!this.statusElem) return;
-        if (message) {
-            this.statusElem.innerText = `[${message}]`;
-            return;
-        }
-        this.statusElem.innerText = active ? "[Screen: Stay Awake \u2600]" : "[Screen: Normal \u263D]";
+        document.title = BASE_TITLE;
     }
 }
 
@@ -282,8 +270,13 @@ class state {
                 energyElem.innerText = 'N/A';
                 energyStatsElem.innerText = 'N/A';
             }
+
+            if (this.meter.running) {
+                document.title = `🟢 ${p.voltage.toFixed(2)}V ${p.current.toFixed(2)}A | ${BASE_TITLE}`;
+            }
         } else {
             console.log("clearing state");
+            document.title = BASE_TITLE;
             voltageElem.innerText = '';
             currentElem.innerText = '';
             powerElem.innerText = '';
@@ -529,8 +522,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     } else {
         showError("WebBluetooth does not seem to be supported by this device");
     }
-
-    wakeLock.init(wakeLockStatusElem);
 
     // Setup UI callbacks
     state.meter.onPacketCallback = state.add.bind(state);
