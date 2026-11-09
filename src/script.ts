@@ -475,11 +475,13 @@ function initPlot(initialPackets?: Packet[]) {
         autosize: true,
         showlegend: true,
         automargin: true,
+        dragmode: 'pan' as const,
     };
 
     const config = {
         displaylogo: false,
         responsive: true,
+        scrollZoom: true,
     };
 
     const series = buildPlotSeries(initialPackets);
