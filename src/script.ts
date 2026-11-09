@@ -476,6 +476,12 @@ function initPlot(initialPackets?: Packet[]) {
         showlegend: true,
         automargin: true,
         dragmode: 'pan' as const,
+        margin: {
+            t: 20,
+            b: 40,
+            l: 45,
+            r: 20,
+        },
     };
 
     const config = {
