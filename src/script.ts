@@ -361,6 +361,8 @@ class state {
             }
 
             if (this.meter.running) {
+                // const formattedPower = p.power < 10 ? p.power.toFixed(1) : Math.round(p.power);
+                // document.title = `${formattedPower}W ${p.voltage.toFixed(1)}V ${p.current.toFixed(2)}A | ${BASE_TITLE}`;
                 document.title = `${p.power.toFixed(2)}W ${p.voltage.toFixed(2)}V ${p.current.toFixed(2)}A | ${BASE_TITLE}`;
             }
 
