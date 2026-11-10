@@ -1,6 +1,4 @@
-# [USB BLE Power Meter](https://zdavano.github.io/usb-meter/)
-
-[zdavano.github.io/usb-meter](https://zdavano.github.io/usb-meter/)
+# USB BLE Power Meter
 
 ## Information
 
