@@ -117,13 +117,17 @@
 
   <hr>
 
-    <div style="display: flex; align-items: center; justify-content: flex-end; gap: 6px; margin-bottom: 8px;">
+    <div style="display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 6px; margin-bottom: 8px;">
     <span style="font-size: 0.85em; opacity: 0.8; margin-right: 4px;">Window:</span>
-    <button class="time-range-btn active" data-range="0" onclick="setTimeWindow(0)">All</button>
     <button class="time-range-btn" data-range="60" onclick="setTimeWindow(60)">1m</button>
     <button class="time-range-btn" data-range="300" onclick="setTimeWindow(300)">5m</button>
     <button class="time-range-btn" data-range="900" onclick="setTimeWindow(900)">15m</button>
+    <button class="time-range-btn" data-range="1800" onclick="setTimeWindow(1800)">30m</button>
     <button class="time-range-btn" data-range="3600" onclick="setTimeWindow(3600)">1h</button>
+    <button class="time-range-btn" data-range="7200" onclick="setTimeWindow(7200)">2h</button>
+    <button class="time-range-btn" data-range="10800" onclick="setTimeWindow(10800)">3h</button>
+    <button class="time-range-btn" data-range="21600" onclick="setTimeWindow(21600)">6h</button>
+    <button class="time-range-btn active" data-range="0" onclick="setTimeWindow(0)">All</button>
   </div>
   <div id="graph"></div>
 
