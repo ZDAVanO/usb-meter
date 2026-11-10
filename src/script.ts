@@ -44,6 +44,7 @@ interface StateData {
     };
 }
 
+const BASE_TITLE = "USB BLE Power Meter";
 
 function updateConnectionUI(status: 'disconnected' | 'connecting' | 'connected') {
     goButton.classList.remove('btn-connected', 'btn-disconnected', 'btn-connecting');
@@ -141,6 +142,7 @@ class state {
         updateConnectionUI('disconnected');
         this.disconnected = true;
         await wakeLock.release();
+        document.title = BASE_TITLE;
     }
 
     static async start(device: BluetoothDevice) {
@@ -358,8 +360,13 @@ class state {
                 energyStatsElem.innerText = 'N/A';
             }
 
+            if (this.meter.running) {
+                document.title = `${p.power.toFixed(2)}W ${p.voltage.toFixed(2)}V ${p.current.toFixed(2)}A | ${BASE_TITLE}`;
+            }
+
         } else {
             console.log("clearing state");
+            document.title = BASE_TITLE;
             voltageElem.innerText = '';
             currentElem.innerText = '';
             powerElem.innerText = '';
@@ -398,6 +405,7 @@ async function Go() {
         await state.meter.disconnect();
         await wakeLock.release();
         updateConnectionUI('disconnected');
+        document.title = BASE_TITLE;
     } else {
         try {
             updateConnectionUI('connecting');
