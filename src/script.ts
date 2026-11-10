@@ -587,6 +587,27 @@ function initPlot(initialPackets?: Packet[]) {
         showlegend: true,
         automargin: true,
         dragmode: 'pan' as const,
+        paper_bgcolor: '#161f27',
+        plot_bgcolor: '#161f27',
+        font: {
+            color: '#c9d1d9',
+        },
+        xaxis: {
+            gridcolor: '#243242',
+            zerolinecolor: '#243242',
+            tickfont: { color: '#8b949e' },
+            linecolor: '#243242',
+        },
+        yaxis: {
+            gridcolor: '#243242',
+            zerolinecolor: '#243242',
+            tickfont: { color: '#8b949e' },
+            linecolor: '#243242',
+        },
+        legend: {
+            font: { color: '#c9d1d9' },
+            bgcolor: 'rgba(22, 31, 39, 0.7)',
+        },
         margin: {
             t: 20,
             b: 40,
@@ -611,7 +632,7 @@ function initPlot(initialPackets?: Packet[]) {
             type: 'scattergl',
             mode: 'lines',
             connectgaps: false,
-            line: { color: 'darkRed' },
+            line: { color: '#ffd700' },
         },
         {
             name: "Current",
@@ -620,7 +641,7 @@ function initPlot(initialPackets?: Packet[]) {
             type: 'scattergl',
             mode: 'lines',
             connectgaps: false,
-            line: { color: 'green' },
+            line: { color: '#4ade80' },
         },
         {
             name: "Power",
@@ -629,7 +650,7 @@ function initPlot(initialPackets?: Packet[]) {
             type: 'scattergl',
             mode: 'lines',
             connectgaps: false,
-            line: { color: 'red' },
+            line: { color: '#ff5252' },
         },
         {
             name: "Energy",
@@ -638,7 +659,7 @@ function initPlot(initialPackets?: Packet[]) {
             type: 'scattergl',
             mode: 'lines',
             connectgaps: false,
-            line: { color: 'purple' },
+            line: { color: '#c084fc' },
             visible: 'legendonly',
         },
         {
@@ -648,7 +669,7 @@ function initPlot(initialPackets?: Packet[]) {
             type: 'scattergl',
             mode: 'lines',
             connectgaps: false,
-            line: { color: 'lightblue' },
+            line: { color: '#38bdf8' },
             visible: 'legendonly',
         },
         {
@@ -658,7 +679,7 @@ function initPlot(initialPackets?: Packet[]) {
             type: 'scattergl',
             mode: 'lines',
             connectgaps: false,
-            line: { color: 'blue' },
+            line: { color: '#2d6eff' },
             visible: 'legendonly',
         },
         {
@@ -668,7 +689,7 @@ function initPlot(initialPackets?: Packet[]) {
             type: 'scattergl',
             mode: 'lines',
             connectgaps: false,
-            line: { color: 'turquoise' },
+            line: { color: '#2dd4bf' },
         },
         {
             name: "USB D-",
@@ -677,7 +698,7 @@ function initPlot(initialPackets?: Packet[]) {
             type: 'scattergl',
             mode: 'lines',
             connectgaps: false,
-            line: { color: 'lightGreen' },
+            line: { color: '#86efac' },
             visible: 'legendonly',
         },
         {
@@ -687,7 +708,7 @@ function initPlot(initialPackets?: Packet[]) {
             type: 'scattergl',
             mode: 'lines',
             connectgaps: false,
-            line: { color: 'lightGreen' },
+            line: { color: '#34d399' },
             visible: 'legendonly',
         },
     ], layout, config).then(() => {
