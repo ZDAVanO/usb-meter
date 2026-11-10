@@ -6,15 +6,12 @@ This webapp makes use of [WebBluetooth](https://web.dev/bluetooth/) to read data
 from cheap Atorch power meters. Any web browser with WebBluetooth support
 should work, including Chrome-based browsers on desktop and Android.
 
-## Features
+## Key Differences
 
-- **Long-term logging (24h+)**: hardware-accelerated WebGL rendering (`scattergl`) capable of holding 100,000+ data points smoothly.
-- **IndexedDB persistence**: data is saved in your browser storage and automatically restored after page reloads (F5).
-- **Background tab support**: throttles heavy canvas redraws when the tab is hidden and flushes queued points upon return.
-- **Screen Wake Lock**: keeps the system awake during active testing and shows a status indicator in the tab title (`🟢`).
-- **Disconnection gap handling**: automatically creates visual breaks on the chart when the device is disconnected or paused.
-- **Separate Controls**: dedicated buttons for hardware meter reset and clearing web session data.
-- **CSV Export**: fast chronological download via Blobs.
+- **Session Persistence** — Data is saved in IndexedDB and survives page reloads.
+- **Improved Graph** — Dark theme, interactive zoom/pan, and time-range filters.
+- **Live Tab Title** — Shows real-time power, voltage, and current in the browser tab.
+- **Background Logging** — Screen Wake Lock and clean disconnect handling on the chart.
 
 ## Screenshots
 
