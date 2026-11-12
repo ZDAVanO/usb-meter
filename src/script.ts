@@ -422,9 +422,13 @@ async function Go() {
             console.log("got device: ", device.name, device.id);
             await state.meter.start(device);
             await wakeLock.request();
-        } catch (error) {
-            console.error("Bluetooth connection error: ", error);
+        } catch (error: any) {
             updateConnectionUI('disconnected');
+            if (error?.name === 'NotFoundError' || error?.name === 'AbortError' || String(error).includes('cancelled') || String(error).includes('canceled')) {
+                console.log("Device chooser cancelled by user.");
+                return;
+            }
+            console.error("Bluetooth connection error: ", error);
             showError(String(error));
         }
     }
