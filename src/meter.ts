@@ -6,9 +6,22 @@ const UUID_SERVICE = "0000ffe0-0000-1000-8000-00805f9b34fb";
 // BLE Notify
 const UUID_NOTIFY = "0000ffe1-0000-1000-8000-00805f9b34fb";
 
+enum MESSAGE {
+    REPORT = 0x01,
+    REPLY = 0x02,
+    COMMAND = 0x11,
+}
+
+enum DEVICE_TYPE {
+    AC = 0x01,
+    DC = 0x02,
+    USB = 0x03,
+}
+
 class Meter {
     private device: BluetoothDevice | null = null;
     running: boolean = false;
+    deviceType: DEVICE_TYPE = DEVICE_TYPE.USB;
     private characteristic: BluetoothRemoteGATTCharacteristic | null;
     onDisconnectCallback: EventListener | null;
     onStartCallback: ((device: BluetoothDevice) => void) | null;
@@ -43,6 +56,7 @@ class Meter {
         //console.log('Received ', buf2hex(value.buffer));
         try {
             var p = new Packet(characteristic.value);
+            this.deviceType = p.type;
         } catch (e) {
             console.error("got bad packet", e);
             return;
@@ -116,10 +130,65 @@ class Meter {
             console.error("can't reset if not running!");
             return;
         }
-        var packet = hex2packet(resetPacketHex);
-        return await this.sendPacket(packet)
+        var packet = buildCommandPacket(this.deviceType, 0x05);
+        return await this.sendPacket(packet);
     }
 
+    async setup(): Promise<void> {
+        if (!this.running) {
+            console.error("can't send setup if not running!");
+            return;
+        }
+        var packet = buildCommandPacket(this.deviceType, 0x31);
+        return await this.sendPacket(packet);
+    }
+
+    async enter(): Promise<void> {
+        if (!this.running) {
+            console.error("can't send enter if not running!");
+            return;
+        }
+        var packet = buildCommandPacket(this.deviceType, 0x32);
+        return await this.sendPacket(packet);
+    }
+
+    async plus(): Promise<void> {
+        if (!this.running) {
+            console.error("can't send plus if not running!");
+            return;
+        }
+        var packet = buildCommandPacket(this.deviceType, 0x33);
+        return await this.sendPacket(packet);
+    }
+
+    async minus(): Promise<void> {
+        if (!this.running) {
+            console.error("can't send minus if not running!");
+            return;
+        }
+        var packet = buildCommandPacket(this.deviceType, 0x34);
+        return await this.sendPacket(packet);
+    }
+
+}
+
+function buildCommandPacket(deviceType: DEVICE_TYPE, command: number): Uint8Array {
+    const isUsb = deviceType === DEVICE_TYPE.USB;
+    const typeByte = isUsb ? 0x03 : 0x01;
+    let cmdByte = command;
+    if (command === 0x11 || command === 0x33) {
+        cmdByte = isUsb ? 0x33 : 0x11;
+    } else if (command === 0x12 || command === 0x34) {
+        cmdByte = isUsb ? 0x34 : 0x12;
+    }
+
+    const packet = new Uint8Array([0xFF, 0x55, 0x11, typeByte, cmdByte, 0x00, 0x00, 0x00, 0x00, 0x00]);
+    let sum = 0;
+    for (let i = 2; i <= 8; i++) {
+        sum = (sum + packet[i]) & 0xFF;
+    }
+    packet[9] = sum ^ 0x44;
+    return packet;
 }
 
 // given a hex string, returns a packet
@@ -185,20 +254,6 @@ interface PacketDuration {
 const START_OF_FRAME_BYTE1 = 0xFF;
 // offset 1
 const START_OF_FRAME_BYTE2 = 0x55;
-
-// offset 2
-enum MESSAGE {
-    REPORT = 0x01,
-    REPLY = 0x02,
-    COMMAND = 0x11,
-}
-
-// offset 3
-enum DEVICE_TYPE {
-    AC = 0x01,
-    DC = 0x02,
-    USB = 0x03,
-}
 
 const REPORT_PACKET_LEN = 36;
 

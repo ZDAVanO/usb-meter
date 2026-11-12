@@ -40,6 +40,27 @@
       border-radius: 8px;
       overflow: hidden;
     }
+    .controls-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .controls-row button {
+      margin: 0;
+    }
+    .controls-row .btn-step {
+      min-width: 42px;
+      font-weight: bold;
+      text-align: center;
+    }
+    .controls-label {
+      font-size: 0.85em;
+      opacity: 0.8;
+      margin-right: 4px;
+      font-weight: 600;
+    }
   </style>
 
   <title>USB BLE Power Meter</title>
@@ -52,11 +73,21 @@
 
   <hr>
 
-  <button id="go" class="btn-disconnected" onclick="Go()">Connect</button>
-  <button id="pause" onclick="Pause()">Pause</button>
-  <button id="resetMeter" onclick="ResetMeter()">Reset Meter</button>
-  <button id="clearData" onclick="ClearData()">Clear Graph</button>
-  <button id="save" onclick="Save()">Save CSV</button>
+  <div class="controls-row">
+    <button id="go" class="btn-disconnected" onclick="Go()">Connect</button>
+    <button id="pause" onclick="Pause()">Pause</button>
+    <button id="clearData" onclick="ClearData()">Clear Graph</button>
+    <button id="save" onclick="Save()">Save CSV</button>
+  </div>
+
+  <div class="controls-row">
+    <span class="controls-label">Device:</span>
+    <button id="btnSetup" onclick="SetupMeter()">Setup</button>
+    <button id="btnMinus" class="btn-step" onclick="MinusMeter()">-</button>
+    <button id="btnPlus" class="btn-step" onclick="PlusMeter()">+</button>
+    <button id="btnEnter" onclick="EnterMeter()">Enter</button>
+    <button id="resetMeter" onclick="ResetMeter()">Reset Meter</button>
+  </div>
 
   <table>
     <thead>

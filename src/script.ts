@@ -460,6 +460,62 @@ async function ResetMeter() {
     }
 }
 
+async function SetupMeter() {
+    if (!state.meter.running) {
+        showError("Meter is not connected. Please connect first.");
+        return;
+    }
+    try {
+        console.log("Sending Setup command to meter hardware...");
+        await state.meter.setup();
+    } catch (err) {
+        console.error("Meter Setup error:", err);
+        showError(`Failed to send Setup command: ${String(err)}`);
+    }
+}
+
+async function EnterMeter() {
+    if (!state.meter.running) {
+        showError("Meter is not connected. Please connect first.");
+        return;
+    }
+    try {
+        console.log("Sending Enter command to meter hardware...");
+        await state.meter.enter();
+    } catch (err) {
+        console.error("Meter Enter error:", err);
+        showError(`Failed to send Enter command: ${String(err)}`);
+    }
+}
+
+async function PlusMeter() {
+    if (!state.meter.running) {
+        showError("Meter is not connected. Please connect first.");
+        return;
+    }
+    try {
+        console.log("Sending + command to meter hardware...");
+        await state.meter.plus();
+    } catch (err) {
+        console.error("Meter + error:", err);
+        showError(`Failed to send + command: ${String(err)}`);
+    }
+}
+
+async function MinusMeter() {
+    if (!state.meter.running) {
+        showError("Meter is not connected. Please connect first.");
+        return;
+    }
+    try {
+        console.log("Sending - command to meter hardware...");
+        await state.meter.minus();
+    } catch (err) {
+        console.error("Meter - error:", err);
+        showError(`Failed to send - command: ${String(err)}`);
+    }
+}
+
 function formatDateForPlotly(d: Date): string {
     const pad = (n: number, z = 2) => String(n).padStart(z, '0');
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}.${pad(d.getMilliseconds(), 3)}`;
