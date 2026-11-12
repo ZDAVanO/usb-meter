@@ -343,9 +343,12 @@ class state {
             timeElem.innerText = `${p.duration}`;
 
             // stats
+            const activeAvgPower = (p.durationSeconds > 0 && p.energy > 0)
+                ? (Math.round((p.energy / (p.durationSeconds / 3600)) * 100) / 100).toFixed(2)
+                : '-';
             voltageStatsElem.innerText = `${this.data.stats.min.voltage ?? '-'} / ${this.data.stats.max.voltage ?? '-'} / ${this.data.stats.average.voltage ?? '-'}`;
             currentStatsElem.innerText = `${this.data.stats.min.current ?? '-'} / ${this.data.stats.max.current ?? '-'} / ${this.data.stats.average.current ?? '-'}`;
-            powerStatsElem.innerText = `${this.data.stats.min.power ?? '-'} / ${this.data.stats.max.power ?? '-'} / ${this.data.stats.average.power ?? '-'}`;
+            powerStatsElem.innerText = `${this.data.stats.min.power ?? '-'} / ${this.data.stats.max.power ?? '-'} / ${this.data.stats.average.power ?? '-'} (active: ${activeAvgPower})`;
             energyStatsElem.innerText = `${this.data.stats.min.energy ?? '-'} / ${this.data.stats.max.energy ?? '-'}`;
             capacityStatsElem.innerText = `${this.data.stats.min.capacity ?? '-'} / ${this.data.stats.max.capacity ?? '-'}`;
             resistanceStatsElem.innerText = `${this.data.stats.min.resistance ?? '-'} / ${this.data.stats.max.resistance ?? '-'} / ${this.data.stats.average.resistance ?? '-'}`;

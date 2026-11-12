@@ -359,8 +359,26 @@ class Packet {
         p.over_voltage_protection = 0;
         p.lower_voltage_protection = 0;
         p.over_current_protection = 0;
-        p.duration_raw = { hour: 0, minute: 0, second: 0 };
+        const parts = rec.duration ? rec.duration.split(':').map(Number) : [0, 0, 0];
+        p.duration_raw = {
+            hour: parts[0] || 0,
+            minute: parts[1] || 0,
+            second: parts[2] || 0,
+        };
         return p;
+    }
+
+    get durationSeconds(): number {
+        if (this.duration_raw) {
+            return (this.duration_raw.hour || 0) * 3600 + (this.duration_raw.minute || 0) * 60 + (this.duration_raw.second || 0);
+        }
+        if (this.duration) {
+            const parts = this.duration.split(':').map(Number);
+            if (parts.length === 3 && parts.every(n => !isNaN(n))) {
+                return parts[0] * 3600 + parts[1] * 60 + parts[2];
+            }
+        }
+        return 0;
     }
 
     static durationString(duration: PacketDuration): string {
